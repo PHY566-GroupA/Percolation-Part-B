@@ -1,0 +1,189 @@
+from pylab import *
+import random
+
+#print "the case where the if statement has been used"
+n=100   #linear dimension of grid (n*n)
+N=150  #number of distinct probability values
+prob=linspace(0.40,0.80,N)
+iterations=50   #number of iterations for each probability value
+
+def lies(x,cluster_dict):
+	val=0
+	for i in range(len(cluster_dict)):     #search different clusters
+		for j in range(len(cluster_dict[i+1])):   #search different elements within particular cluster
+			if x==cluster_dict[i+1][j]:
+	                        val=i+1
+	                        break
+	return val 
+	
+def fraction(p):
+	grid = zeros((n,n))
+	coordinate=[]
+	cluster_dictionary={1:[]}  #stores the coordinates [x,y] of every element in a particular cluster.. and this is a dictionary of all the possible clusters,keys numbered starting from 1; gets dynamically updated.      
+	count=0	#to count the number of filled sites in the grid		
+	for i in range(n):
+		for j in range(n):
+			r=random.random()
+			if r<p:
+		                count+=1
+				grid[i,j]=1 #occupy the site with a probability p
+				coordinate.append([i,j])
+
+	temp=[]   #temporary array containing the coordinates we'll be working with
+	for i in range(len(coordinate)):
+		temp.append(coordinate[i])
+	# otherwise setting temp=coordinate and later deleting elements from temp, deletes elements from coordinate as well
+	
+	cluster_dictionary[1].append(temp[0]) #append the first occupied site codnate to first cluster	
+	temp.pop(0)
+        #temp[0] is the last element we are checking for
+	for l in range(len(coordinate)-1): #excluding the first element, that has already been taken care of
+		a=0 #keeps count of the number of empty adjacent sites
+		b=0 #keeps count of the number of adjacent sites
+		z=[0,0,0,0]
+		if (temp[0][0]+1)<n: #i.e, the right adjacent x coordinate lies within the grid 
+			b+=1
+			if lies([temp[0][0]+1,temp[0][1]],cluster_dictionary)!=0:  #(adjacent one lies in some cluster)..also !=0 works because no cluster has the key 0 in the dictionary. the keys start from 1.
+				z[0]=lies([temp[0][0]+1,temp[0][1]],cluster_dictionary)
+				cluster_dictionary[z[0]].append(temp[0])
+			else:
+				a+=1  #this adjacent one is empty
+	
+		if (temp[0][0]-1)>=0: #i.e the left adjacent x coordinate lies within the grid
+			b+=1
+			if lies([temp[0][0]-1,temp[0][1]],cluster_dictionary)!=0:  #(adjacent one lies in some cluster)
+				z[1]=lies([temp[0][0]-1,temp[0][1]],cluster_dictionary)
+				if temp[0] not in cluster_dictionary[z[1]]: #necessary as it might already be 
+					cluster_dictionary[z[1]].append(temp[0])
+			else:
+				a+=1  #this adjacent one is empty
+	#trouble here
+		if (temp[0][1]+1)<n: #i.e the upper adjacent y coordinate lies within the grid 
+			b+=1
+			if lies([temp[0][0],temp[0][1]+1],cluster_dictionary)!=0:  #(adjacent one lies in some cluster)
+				z[2]=lies([temp[0][0],temp[0][1]+1],cluster_dictionary)
+				if temp[0] not in cluster_dictionary[z[2]]:
+					cluster_dictionary[z[2]].append(temp[0])
+			else:
+				a+=1  #this adjacent one is empty
+
+		if (temp[0][1]-1)>=0: #i.e the lower adjacent y coordinate lies within the grid
+			b+=1
+			if lies([temp[0][0],temp[0][1]-1],cluster_dictionary)!=0:  #(adjacent one lies in some cluster)
+				z[3]=lies([temp[0][0],temp[0][1]-1],cluster_dictionary)
+				if temp[0] not in cluster_dictionary[z[3]]:
+					cluster_dictionary[z[3]].append(temp[0])
+			else:
+				a+=1  #this adjacent one is empty
+
+		if a==b:  #the number of adjacent sites matches the number of empty adjacent sites
+			r=len(cluster_dictionary)+1  
+			cluster_dictionary[r]=[]   #numbering of clusters start from 1.adding a new cluster here with this latest unused coordinate(as it has no adjacent filled sites), being put in that new cluster
+			cluster_dictionary[r].append(temp[0])
+
+	#now need to merge ALL( at most 4) clusters in which temp[0] may have entered, if it didnt already create a separate cluster for itself when a==4 above.
+		temp_list=cluster_dictionary.keys()   #temporary list of the keys in cluster_dictionary
+		indices=[]      #stores the key values of the clusters that contain temp[0]
+		for i in range(len(temp_list)):    #run over all the clusters
+			if temp[0] in cluster_dictionary[temp_list[i]]: #or cudve just written if temp[0] in cluster_dictionary[temp_list[i]]
+				indices.append(temp_list[i])   #list of keys in whose values temp[0] appears
+		if len(indices)>1:
+			for j in range(1,len(indices)):
+				cluster_dictionary[indices[j]].pop()  #delete the coordinate entry of temp[0]	
+				cluster_dictionary[indices[0]]=cluster_dictionary[indices[0]]+cluster_dictionary[indices[j]]	#all lists containing temp[0] are merged now, and contain temp[0] only once
+			for j in range(1,len(indices)):	
+				del cluster_dictionary[indices[j]]   #after merging the clusters, delete the other ones containing temp[0]
+
+	#now need to renumber the keys of cluster_dictionary from 1 to len(cluster_dictionary)
+		length=len(cluster_dictionary)
+		new=[] # stores the new keys from 1 to len(cluster_dictionary)
+		key=cluster_dictionary.keys()   #stores the old keys from cluster_dictionary that we are about to modify
+		for i in range(length):
+			new.append(i+1)
+		new_dict=cluster_dictionary.fromkeys(new)
+		for i in range(len(key)):
+			new_dict[i+1]=cluster_dictionary[key[i]]
+		cluster_dictionary=new_dict
+
+		temp.pop(0)    #pop out the value of the filled site in this iteration. In the next iteration, the next filled site will be dealt with
+
+	entire_cluster=[]  #stores the unique cluster that percolate all the 4 sides
+	for i in range(len(cluster_dictionary)):  #scan through all the clusters
+		q_1=0   #tracks if a particular cluster touches left side
+		q_2=0   #tracks if a particular cluster touches right side
+		s_1=0   #tracks if a particular cluster touches bottom side
+		s_2=0   #tracks if a particular cluster touches top side
+		for j in range(len(cluster_dictionary[i+1])):   #scan through all the coordinates in the (i+1)th cluster
+			if cluster_dictionary[i+1][j][0]==0:
+				q_1+=1		# cluster touches the left side at least at one place
+			if cluster_dictionary[i+1][j][0]==(n-1):
+				q_2+=1          #cluster touches the right side at least at one place
+
+		for j in range(len(cluster_dictionary[i+1])):   #scan through all the coordinates in the (i+1)th cluster
+			if cluster_dictionary[i+1][j][1]==0:
+				s_1+=1		#cluster touches the bottom side at least at one place
+			if cluster_dictionary[i+1][j][1]==(n-1):
+				s_2+=1	        #cluster touches the top side at least at one place
+
+		if s_1!=0 and s_2!=0 and q_1!=0 and q_2!=0: #then the entire cluster does form
+			entire_cluster=cluster_dictionary[i+1]
+	if len(entire_cluster)>0:
+		required_fraction=float(len(entire_cluster))/count
+	else: 
+		required_fraction=0.0
+	return required_fraction
+
+averages=[] #list of the final values
+for h in range(len(prob)):
+	print "the code is calculating the average for the %d'th probability value: %.4f" %(h,prob[h])
+	q=[]
+	for i in range(iterations):  #ranges over the different number of iterations
+		pp=fraction(prob[h])
+		print "the iteration number: "+ str(i)+ " and the fractional value for this iteration:" + str(pp)
+		if fraction(prob[h])>0:  #only appends the fractional value when a spanning cluster is formed
+			q.append(pp)  #append the value only if it is non zero
+	if len(q)>0:   #i.e if there is at least one time in the iterations that a spanning cluster has formed
+		averages.append(average(q))  #append the average values of the ones that have formed
+	else:
+		averages.append(0)           #else, append 0 if no cluster has formed in any of the runs
+ 
+plot(prob,averages,'g*')
+xlabel('Probability values')
+ylabel('Fraction of sites in spanning cluster wrt total number of occupied sites')
+title('Plot of the fractional values (only considering runs with clusters)')
+show()
+
+#print "the filled coordinates are printed below:"
+#print coordinate
+#print "all the clusters that are formed are printed below:"
+#print cluster_dictionary
+#print "the lengths of all the clusters formed are given below:"
+#print [len(cluster_dictionary[cluster_dictionary.keys()[i]]) for i in range(len(cluster_dictionary))]
+#print "number of grid points in each side of grid:",n
+#print "total number of grid points on the grid:", n**2
+#print "number of filled sites:",count
+#print "number of clusters formed:",len(cluster_dictionary)
+#print "number of points in the entirely percolating cluster is:",len(entire_cluster)
+#print "fraction of sites occupied by the spanning cluster is:",float(len(entire_cluster))/(count)
+#if len(entire_cluster)>0:	#if the cluster at all forms
+#	plot([p[0] for p in entire_cluster],[p[1] for p in entire_cluster],'rs')
+#	show()	
+#else:
+#	print "thus the number of coordinates in the cluster percolating all four sides is 0"	
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+	
+
+
