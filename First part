@@ -2,15 +2,15 @@ from pylab import *
 import random
 from time import time
 
-n=100   #linear dimension of grid (n*n)
+n=300   #linear dimension of grid (n*n)
 #N=20  #number of distinct probability values
 #probability=linspace(0.593,0.750,N)
 #iterations=50   #number of iterations for each probability value
-p=0.599 #use this probability value for the time being
+#p=0.590
+p=input("The probability of filling each site: ") #enter probability value for the time being
 grid = zeros((n,n))
 coordinate=[]
 cluster_dictionary={1:[]}  #stores the coordinates [x,y] of every element in a particular cluster.. and this is a dictionary of all the possible clusters,keys numbered starting from 1; gets dynamically updated.
-time1=time()
 def lies(x,cluster_dictionary):
         val=0
 	for i in range(len(cluster_dictionary)):     #search different clusters
@@ -19,6 +19,21 @@ def lies(x,cluster_dictionary):
                                 val=i+1
                                 break
         return val       
+
+def secondmax(a):   #returns the 2nd largest element in an array
+	tt=[]    
+	for i in range(len(a)):
+		tt.append(a[i])
+	tt.remove(max(tt))
+	return max(tt)
+
+def thirdmax(a):   #returns the third largest element in an array
+	ttt=[]    
+	for i in range(len(a)):
+		ttt.append(a[i])
+	ttt.remove(max(ttt))
+	ttt.remove(max(ttt))
+	return max(ttt)	
 
 count=0	#to count the number of filled sites in the grid		
 for i in range(n):
@@ -129,13 +144,15 @@ for i in range(len(cluster_dictionary)):  #scan through all the clusters
 	if s_1!=0 and s_2!=0 and q_1!=0 and q_2!=0:   #then the percolating cluster does form
 		entire_cluster=cluster_dictionary[i+1]
 
-#print "the filled coordinates are printed below:"
-#print coordinate
-#print "all the clusters that are formed are printed below:"
-#print cluster_dictionary
 print "the lengths of all the clusters formed are given below:"
-xx=[len(cluster_dictionary[cluster_dictionary.keys()[i]]) for i in range(len(cluster_dictionary))]
+xx=[len(cluster_dictionary[cluster_dictionary.keys()[i]]) for i in range(len(cluster_dictionary))] #stores the length of all the clusters
 print xx # prints the lengths of all the clusters that are formed
+aa=max(xx)   #the maximum length
+bb=secondmax(xx)  #the second largest length
+cc=thirdmax(xx)   #the third largest length
+print "largest one:",aa
+print "second largest one",bb
+print "third largest one",cc
 print "number of grid points in each side of grid:",n
 print "total number of grid points on the grid:", n**2
 print "number of filled sites:",count
@@ -144,17 +161,33 @@ print "number of points in the entirely percolating cluster is:",len(entire_clus
 print "fraction of sites occupied by the percolating cluster is:",float(len(entire_cluster))/(count)
 if len(entire_cluster)>0:	#if the cluster at all forms
 	print "thus a percolating cluster does form"
-	plot([p[0] for p in entire_cluster],[p[1] for p in entire_cluster],'r*')
+	second_max_cluster=cluster_dictionary[cluster_dictionary.keys()[xx.index(bb)]] #the cluster with the 2nd most number of elements
+	third_max_cluster=cluster_dictionary[cluster_dictionary.keys()[xx.index(cc)]] #the cluster with the 3rd most number of elements
+	plot([q[0] for q in second_max_cluster],[q[1] for q in second_max_cluster],'bo')
+	plot([p[0] for p in entire_cluster],[p[1] for p in entire_cluster],'ro')
+	plot([r[0] for r in third_max_cluster],[r[1] for r in third_max_cluster],'go')
+	xlabel('X coordinate')
+	ylabel('Y coordinate')
+	title('Graph showing the entire cluster, and the next two largest clusters')
 	show()	
 else:
-	print "thus there are no spanning clusters here"
-	print "but let's show the cluster which has the maximum extent,even though it doesnt percolate"	
-	max_cluster=cluster_dictionary[cluster_dictionary.keys()[xx.index(max(xx))]] #the cluster with maximum extent
-	plot([p[0] for p in max_cluster],[p[1] for p in max_cluster],'r*')
-	print "fraction of total occupied sites covered by this largest cluster",float(len(max_cluster))/count
+	print "thus there are no percolating clusters here"
+	print "but let's show the three largest clusters"	
+	max_cluster=cluster_dictionary[cluster_dictionary.keys()[xx.index(aa)]] #the cluster with maximum extent
+	second_max_cluster=cluster_dictionary[cluster_dictionary.keys()[xx.index(bb)]] #the cluster with the 2nd most number of elements
+	third_max_cluster=cluster_dictionary[cluster_dictionary.keys()[xx.index(cc)]] #the cluster with the 3rd most number of elements
+	print "fraction of total occupied sites covered by the largest cluster",float(len(max_cluster))/count
+	plot([s[0] for s in max_cluster],[s[1] for s in max_cluster],'ro')
+	plot([q[0] for q in second_max_cluster],[q[1] for q in second_max_cluster],'bo')
+	plot([r[0] for r in third_max_cluster],[r[1] for r in third_max_cluster],'go')
+	xlabel('X coordinate')
+	ylabel('Y coordinate')
+	xlim(0,n)
+	ylim(0,n)
+	title('Graph showing the 3 largest clusters')
 	show()		
-time2=time()
-timee=time2-time1
-print timee
+
 
 	
+
+
