@@ -3,8 +3,10 @@ import random
 
 #print "the case where the if statement has been used"
 n=100   #linear dimension of grid (n*n)
-N=150  #number of distinct probability values
-prob=linspace(0.40,0.80,N)
+N=30  #number of distinct probability values
+M=100*N
+p_0=0.5936
+prob=linspace((p_0+0.02),(p_0+0.10),N) #can't exactly choose p_0 because we have to take logarithm later
 iterations=50   #number of iterations for each probability value
 
 def lies(x,cluster_dict):
@@ -134,42 +136,43 @@ def fraction(p):
 	return required_fraction
 
 averages=[] #list of the final values
-for h in range(len(prob)):
+for h in range(len(prob)):   #only works for a range where you at all have clusters being produced
 	print "the code is calculating the average for the %d'th probability value: %.4f" %(h,prob[h])
+	iterr=0 #keeps track of the number of iterations that produce a spanning cluster
 	q=[]
-	for i in range(iterations):  #ranges over the different number of iterations
+	while iterr < iterations:  #ranges over the different number of iterations
 		pp=fraction(prob[h])
-		print "the iteration number: "+ str(i)+ " and the fractional value for this iteration:" + str(pp)
-		if fraction(prob[h])>0:  #only appends the fractional value when a spanning cluster is formed
+		if pp > 0:  #only appends the fractional value when a spanning cluster is formed
+			print "the iteration number: "+ str(iterr)+ " and the fractional value for this iteration: "+ str(pp)
 			q.append(pp)  #append the value only if it is non zero
+			iterr+=1
 	if len(q)>0:   #i.e if there is at least one time in the iterations that a spanning cluster has formed
 		averages.append(average(q))  #append the average values of the ones that have formed
 	else:
 		averages.append(0)           #else, append 0 if no cluster has formed in any of the runs
+print averages
+prob_shifted=linspace(0.03,0.10,N)
+log_prob_shifted=log(prob_shifted)
+log_averages=log(averages)
+z1=polyfit(log_prob_shifted,log_averages,1) #the linear fit
+p1=poly1d(z1) #the polynomial
+xx=linspace(0.03,0.10,M)
+log_xx=log(xx)
+print z1 #prints the fitted coefficients
  
-plot(prob,averages,'g*')
-xlabel('Probability values')
-ylabel('Fraction of sites in spanning cluster wrt total number of occupied sites')
-title('Plot of the fractional values (only considering runs with clusters)')
+plot(log_prob_shifted,log_averages,'g*-',label="Actual plot")
+plot(log_xx,p1(log_xx),'r-',label="Fitted plot")
+xlabel('Logarithm of Probability values')
+ylabel('Logarithm of Fraction of occupied sites in cluster')
+title('Logarithm of plot (only considering runs with clusters)')
+legend(loc="lower right")
 show()
 
-#print "the filled coordinates are printed below:"
-#print coordinate
-#print "all the clusters that are formed are printed below:"
-#print cluster_dictionary
-#print "the lengths of all the clusters formed are given below:"
-#print [len(cluster_dictionary[cluster_dictionary.keys()[i]]) for i in range(len(cluster_dictionary))]
-#print "number of grid points in each side of grid:",n
-#print "total number of grid points on the grid:", n**2
-#print "number of filled sites:",count
-#print "number of clusters formed:",len(cluster_dictionary)
-#print "number of points in the entirely percolating cluster is:",len(entire_cluster)
-#print "fraction of sites occupied by the spanning cluster is:",float(len(entire_cluster))/(count)
-#if len(entire_cluster)>0:	#if the cluster at all forms
-#	plot([p[0] for p in entire_cluster],[p[1] for p in entire_cluster],'rs')
-#	show()	
-#else:
-#	print "thus the number of coordinates in the cluster percolating all four sides is 0"	
+plot(prob,averages,'g*-')
+xlabel('Probability values')
+ylabel('Fraction of occupied sites in cluster')
+title('Plot of the averages of the fraction of occupied sites in spanning cluster')
+show()
 
 
 
